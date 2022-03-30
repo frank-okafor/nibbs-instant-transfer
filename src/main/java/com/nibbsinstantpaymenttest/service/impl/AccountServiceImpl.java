@@ -1,15 +1,18 @@
 package com.nibbsinstantpaymenttest.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.nibbsinstantpaymenttest.data.CreateUserRequest;
 import com.nibbsinstantpaymenttest.data.ServiceResponse;
+import com.nibbsinstantpaymenttest.data.dto.TransactionSearchDTO;
 import com.nibbsinstantpaymenttest.data.dto.TransferRequestDTO;
 import com.nibbsinstantpaymenttest.data.dto.TransferResponse;
 import com.nibbsinstantpaymenttest.enums.TransactionStatus;
@@ -20,6 +23,7 @@ import com.nibbsinstantpaymenttest.model.UserAccount;
 import com.nibbsinstantpaymenttest.repository.TransactionRepository;
 import com.nibbsinstantpaymenttest.repository.UserAccountRepository;
 import com.nibbsinstantpaymenttest.service.AccountService;
+import com.nibbsinstantpaymenttest.service.QueryService;
 import com.nibbsinstantpaymenttest.utils.AppUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class AccountServiceImpl implements AccountService {
 	private final TransactionRepository transactionRepository;
 	private final UserAccountRepository userAccountRepository;
+	private final QueryService queryService;
 
 	@Override
 	public ServiceResponse<UserAccount> createNewUser(CreateUserRequest request) {
@@ -71,6 +76,15 @@ public class AccountServiceImpl implements AccountService {
 	}
 
 	@Override
+	public ServiceResponse<Page<Transaction>> getTransactions(LocalDate fromDate, LocalDate toDate, String userId,
+			String status, int pageNumber, int pageSize) {
+		TransactionSearchDTO searchDTO = TransactionSearchDTO.builder().fromDate(fromDate.atStartOfDay())
+				.toDate(toDate.atTime(23, 59, 59)).userId(userId).status(TransactionStatus.valueOf(status)).build();
+		Page<Transaction> result = queryService.searchTransactions(searchDTO, AppUtils.getPage(pageNumber, pageSize));
+		return new ServiceResponse<Page<Transaction>>(HttpStatus.OK, "records retrieved successfully", result);
+	}
+
+	@Override
 	public synchronized void updateUserBalance(UserAccount user, BigDecimal amount, TransactionType type) {
 		BigDecimal balance = BigDecimal.ZERO;
 		switch (type.name()) {
@@ -88,5 +102,4 @@ public class AccountServiceImpl implements AccountService {
 		user.setBalanceAsAtDate(LocalDateTime.now());
 		userAccountRepository.save(user);
 	}
-
 }

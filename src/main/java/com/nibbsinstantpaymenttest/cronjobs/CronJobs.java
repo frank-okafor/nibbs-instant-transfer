@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.scheduling.annotation.Scheduled;
+
 import com.nibbsinstantpaymenttest.enums.TransactionStatus;
 import com.nibbsinstantpaymenttest.model.NibbsRecord;
 import com.nibbsinstantpaymenttest.model.Transaction;
@@ -21,6 +23,7 @@ public class CronJobs {
 	private final NibbsRecordRepository nibbsRecordRepository;
 	private final UserAccountRepository userAccountRepository;
 
+	@Scheduled(cron = "0 0 0 * * *", zone = "Africa/Lagos") // 12am everyday
 	void processTransactions() {
 		List<Transaction> toProcess = transactionRepository.findByProcessed(false);
 		if (toProcess.isEmpty())
@@ -41,6 +44,7 @@ public class CronJobs {
 		});
 	}
 
+	@Scheduled(cron = "0 1 1 * * *", zone = "Africa/Lagos") // 1am everyday
 	void processCommission() {
 		List<Transaction> toProcess = transactionRepository.findByCommissionWorthy(true);
 		if (toProcess.isEmpty())
